@@ -1,0 +1,20 @@
+# Minimal requirements for MedAI NLP Service
+# Only the absolutely essential dependencies
+
+# Web framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==1.10.24
+
+# NLP core
+spacy==3.7.6
+transformers==4.36.0
+torch==2.2.0+cpu
+numpy==1.26.4
+
+# HTTP
+aiohttp==3.12.15
+httpx==0.25.2
+
+# System
+psutil==6.0.0

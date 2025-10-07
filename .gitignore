@@ -673,5 +673,8 @@ auto-save-list
 tramp
 .\#*
 
+# Project specific inclusions
+!requirements*.txt
+
 # Project specific exclusions
 # Add any project-specific files or directories here
