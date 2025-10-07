@@ -10,7 +10,7 @@ python-multipart==0.0.6
 # NLP and ML
 spacy==3.7.6
 transformers==4.36.0
-torch==2.2.0+cpu
+torch==2.2.0
 numpy==1.26.4
 scikit-learn==1.7.2
 

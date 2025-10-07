@@ -117,20 +117,49 @@ start.bat
 
 ### Docker Deployment
 
-1. **Build the image**
+#### **Production-Ready Multi-Stage Dockerfile**
+
+The project includes a production-optimized Dockerfile with:
+- **Multi-stage build** for minimal image size
+- **Security hardening** with non-root user
+- **Health checks** for container orchestration
+- **Optimized layer caching** for faster builds
+
+#### **Quick Docker Setup**
+
+1. **Build the production image**
 ```bash
-docker build -t medner-de .
+docker build -t medai-nlp:latest .
 ```
 
-2. **Run with Docker Compose**
+2. **Run the container**
 ```bash
-docker-compose up -d
+docker run -p 8000:8000 medai-nlp:latest
 ```
 
-3. **Or run directly**
+3. **Run with environment variables**
 ```bash
-docker run -p 8000:8000 medner-de
+docker run -p 8000:8000 \
+  -e LOG_LEVEL=INFO \
+  -e WORKERS=1 \
+  -e MAX_BATCH_SIZE=100 \
+  medai-nlp:latest
 ```
+
+4. **Run with volume mounts for models**
+```bash
+docker run -p 8000:8000 \
+  -v $(pwd)/models:/app/models \
+  -v $(pwd)/cache:/app/cache \
+  medai-nlp:latest
+```
+
+#### **Docker Features**
+- **Multi-stage build**: Separates build dependencies from runtime
+- **Security**: Non-root user (`medai`) for container security
+- **Health monitoring**: Built-in health checks for orchestration
+- **Optimized caching**: Efficient layer structure for faster rebuilds
+- **Production ready**: Minimal attack surface and resource usage
 
 ## ⚙️ Configuration
 
@@ -404,51 +433,82 @@ The `/health` endpoint provides comprehensive service status:
 - **Caching**: ICD code and entity caching
 - **Memory Management**: Automatic garbage collection
 
-## 🐳 Docker Deployment
+## 🐳 Production Deployment
 
-### Production Docker Compose
+### **Docker Compose for Production**
 ```yaml
 version: '3.8'
 services:
-  medner-de:
+  medai-nlp:
     build: .
+    image: medai-nlp:latest
     ports:
       - "8000:8000"
     environment:
-      - WORKERS=4
-      - MAX_BATCH_SIZE=200
+      - WORKERS=2
+      - MAX_BATCH_SIZE=100
       - LOG_LEVEL=INFO
+      - HOST=0.0.0.0
+      - PORT=8000
     volumes:
-      - ./models:/app/models
+      - ./models:/app/models:ro
       - ./cache:/app/cache
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=10)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     deploy:
       resources:
         limits:
           memory: 4G
           cpus: '2.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
 ```
 
-### Kubernetes Deployment
+### **Production Docker Features**
+- **Multi-stage build**: Optimized for production with minimal image size
+- **Security hardened**: Non-root user, minimal attack surface
+- **Health monitoring**: Built-in health checks for container orchestration
+- **Resource management**: Memory and CPU limits for stable operation
+- **Volume persistence**: Model and cache data persistence
+- **Auto-restart**: Automatic container restart on failure
+
+### **Kubernetes Deployment**
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: medner-de
+  name: medai-nlp
+  labels:
+    app: medai-nlp
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: medner-de
+      app: medai-nlp
   template:
     metadata:
       labels:
-        app: medner-de
+        app: medai-nlp
     spec:
       containers:
-      - name: medner-de
-        image: medner-de:latest
+      - name: medai-nlp
+        image: medai-nlp:latest
         ports:
         - containerPort: 8000
+        env:
+        - name: WORKERS
+          value: "1"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: MAX_BATCH_SIZE
+          value: "100"
         resources:
           requests:
             memory: "2Gi"
@@ -456,7 +516,52 @@ spec:
           limits:
             memory: "4Gi"
             cpu: "2"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        volumeMounts:
+        - name: models
+          mountPath: /app/models
+          readOnly: true
+        - name: cache
+          mountPath: /app/cache
+      volumes:
+      - name: models
+        persistentVolumeClaim:
+          claimName: medai-nlp-models
+      - name: cache
+        persistentVolumeClaim:
+          claimName: medai-nlp-cache
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: medai-nlp-service
+spec:
+  selector:
+    app: medai-nlp
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: LoadBalancer
 ```
+
+### **Production Best Practices**
+- **Resource Limits**: Set appropriate memory and CPU limits
+- **Health Checks**: Configure liveness and readiness probes
+- **Volume Persistence**: Mount model and cache directories
+- **Security**: Use non-root user and minimal privileges
+- **Monitoring**: Enable health check endpoints for orchestration
+- **Scaling**: Configure horizontal pod autoscaling based on metrics
 
 ## 🛠️ Development
 
@@ -522,12 +627,17 @@ MedAINLP/
 ├── tests/
 │   ├── __init__.py
 │   └── test_ner.py         # Test suite
+├── models/                 # Model storage directory
+├── cache/                  # Cache directory
+├── logs/                   # Log files directory
 ├── config.py               # Configuration management
 ├── model_loader.py          # Model loading and management
 ├── ner_service.py          # Core NER functionality
-├── requirements.txt        # Python dependencies
-├── Dockerfile             # Docker configuration
-├── docker-compose.yml     # Docker Compose setup
+├── main.py                 # Main entry point
+├── pyproject.toml          # Modern Python project configuration
+├── requirements-prod.txt   # Production dependencies
+├── Dockerfile             # Multi-stage production Dockerfile
+├── .dockerignore          # Docker build optimization
 ├── start.sh              # Startup script
 └── README.md             # This file
 ```
@@ -598,6 +708,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 1. **spaCy Model Not Found**: Run `python -m spacy download de_core_news_md`
 2. **Memory Errors**: Increase Docker memory limits or reduce batch size
 3. **Slow Performance**: Enable model warmup and use fewer workers
+4. **Docker Build Issues**: Ensure all dependencies are in requirements-prod.txt
+5. **Health Check Failures**: Verify the service is running on the correct port
 
 ### Getting Help
 - **Documentation**: Check this README and inline code comments
