@@ -25,43 +25,43 @@ def setup_logging(log_level: str = "INFO"):
     """Setup logging configuration."""
     logging.basicConfig(
         level=getattr(logging, log_level.upper()),
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.StreamHandler(sys.stdout),
-            logging.FileHandler('medner-de.log')
-        ]
+            logging.FileHandler("medner-de.log"),
+        ],
     )
 
 
 async def initialize_service():
     """Initialize the MedNER-DE service."""
     logger = logging.getLogger(__name__)
-    
+
     try:
         # Load configuration
         config = load_config()
         logger.info("Configuration loaded successfully")
-        
+
         # Initialize model loader
         model_loader = ModelLoader(config)
         logger.info("Model loader initialized")
-        
+
         # Load models
         logger.info("Loading models...")
         model_status = await model_loader.initialize_models()
         logger.info(f"Models loaded: {model_status}")
-        
+
         # Initialize NER service
         ner_service = MedicalNERService(config, model_loader)
         logger.info("NER service initialized")
-        
+
         # Warm up models
         logger.info("Warming up models...")
         await model_loader.warmup_models()
         logger.info("Models warmed up successfully")
-        
+
         return config, model_loader, ner_service
-        
+
     except ModelLoadError as e:
         logger.error(f"Model loading failed: {e}")
         logger.error("Please ensure spaCy German model is installed:")
@@ -72,7 +72,9 @@ async def initialize_service():
         sys.exit(1)
 
 
-async def run_service_async(config, host: str = "0.0.0.0", port: int = 8000, workers: int = 1):
+async def run_service_async(
+    config, host: str = "0.0.0.0", port: int = 8000, workers: int = 1
+):
     """Run FastAPI service safely within an existing event loop."""
     logger = logging.getLogger(__name__)
     logger.info(f"Starting MedNER-DE Service on {host}:{port}")
@@ -85,10 +87,11 @@ async def run_service_async(config, host: str = "0.0.0.0", port: int = 8000, wor
         port=port,
         workers=workers,
         log_level=config.log_level.lower(),
-        reload=False
+        reload=False,
     )
     server = uvicorn.Server(config_uvicorn)
     await server.serve()
+
 
 def run_service(config, host="0.0.0.0", port=8000, workers=1):
     """Detect if event loop already running and handle accordingly."""
@@ -111,23 +114,23 @@ async def main():
     # Setup logging
     setup_logging()
     logger = logging.getLogger(__name__)
-    
+
     logger.info("🚀 Starting MedNER-DE Service")
     logger.info("=" * 50)
-    
+
     try:
         # Initialize service
         config, model_loader, ner_service = await initialize_service()
-        
+
         logger.info("✅ Service initialized successfully")
         logger.info(f"📊 Model status: {model_loader.get_model_status()}")
         logger.info(f"🔧 Configuration: {config.host}:{config.port}")
-        
+
         # Start the service
-        #run_service(config, config.host, config.port, config.workers)
-        
+        # run_service(config, config.host, config.port, config.workers)
+
         await run_service_async(config, config.host, config.port, config.workers)
-        
+
     except KeyboardInterrupt:
         logger.info("👋 Service shutdown requested")
     except Exception as e:
@@ -142,6 +145,6 @@ if __name__ == "__main__":
     if sys.version_info < (3, 12):
         print("❌ Python 3.12+ is required")
         sys.exit(1)
-    
+
     # Run the service
     asyncio.run(main())

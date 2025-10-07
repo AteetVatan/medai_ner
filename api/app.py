@@ -21,8 +21,7 @@ from ner_service import MedicalNERService, ExtractionResult, MedicalEntity
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -35,31 +34,41 @@ ner_service = None
 # Pydantic models for API
 class TextInput(BaseModel):
     """Input model for single text extraction."""
-    text: str = Field(..., description="Text to extract entities from", min_length=1, max_length=50000)
-    
-    @validator('text')
+
+    text: str = Field(
+        ..., description="Text to extract entities from", min_length=1, max_length=50000
+    )
+
+    @validator("text")
     def validate_text(cls, v):
         if not v or not v.strip():
-            raise ValueError('Text cannot be empty')
+            raise ValueError("Text cannot be empty")
         return v.strip()
 
 
 class BatchTextInput(BaseModel):
     """Input model for batch text extraction."""
-    texts: List[str] = Field(..., description="List of texts to extract entities from", min_items=1, max_items=100)
-    
-    @validator('texts')
+
+    texts: List[str] = Field(
+        ...,
+        description="List of texts to extract entities from",
+        min_items=1,
+        max_items=100,
+    )
+
+    @validator("texts")
     def validate_texts(cls, v):
         if not v:
-            raise ValueError('Texts list cannot be empty')
+            raise ValueError("Texts list cannot be empty")
         for i, text in enumerate(v):
             if not text or not text.strip():
-                raise ValueError(f'Text at index {i} cannot be empty')
+                raise ValueError(f"Text at index {i} cannot be empty")
         return [text.strip() for text in v]
 
 
 class EntityResponse(BaseModel):
     """Response model for a single entity."""
+
     text: str
     label: str
     start: int
@@ -74,6 +83,7 @@ class EntityResponse(BaseModel):
 
 class ExtractionResponse(BaseModel):
     """Response model for entity extraction."""
+
     entities: List[EntityResponse]
     processing_time: float
     model_used: List[str]
@@ -83,6 +93,7 @@ class ExtractionResponse(BaseModel):
 
 class BatchExtractionResponse(BaseModel):
     """Response model for batch entity extraction."""
+
     results: List[ExtractionResponse]
     total_processing_time: float
     batch_size: int
@@ -90,6 +101,7 @@ class BatchExtractionResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     """Response model for health check."""
+
     status: str
     timestamp: str
     models: Dict[str, bool]
@@ -103,7 +115,7 @@ app = FastAPI(
     description="German Medical Named Entity Recognition Service",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
 # Add CORS middleware
@@ -120,32 +132,32 @@ app.add_middleware(
 async def startup_event():
     """Initialize the service on startup."""
     global config, model_loader, ner_service
-    
+
     logger.info("Starting MedNER-DE Service...")
-    
+
     try:
         # Load configuration
         config = load_config()
         logger.info(f"Configuration loaded: {config}")
-        
+
         # Initialize model loader
         model_loader = ModelLoader(config)
         logger.info("Model loader initialized")
-        
+
         # Load models
         model_status = await model_loader.initialize_models()
         logger.info(f"Models loaded: {model_status}")
-        
+
         # Initialize NER service
         ner_service = MedicalNERService(config, model_loader)
         logger.info("NER service initialized")
-        
+
         # Warm up models
         await model_loader.warmup_models()
         logger.info("Models warmed up")
-        
+
         logger.info("MedNER-DE Service started successfully")
-        
+
     except Exception as e:
         logger.error(f"Failed to start service: {e}")
         raise
@@ -155,12 +167,12 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup on shutdown."""
     global model_loader
-    
+
     logger.info("Shutting down MedNER-DE Service...")
-    
+
     if model_loader:
         model_loader.cleanup()
-    
+
     logger.info("Service shutdown complete")
 
 
@@ -172,7 +184,7 @@ async def root():
         "version": "1.0.0",
         "description": "German Medical Named Entity Recognition Service",
         "docs": "/docs",
-        "health": "/health"
+        "health": "/health",
     }
 
 
@@ -180,20 +192,20 @@ async def root():
 async def extract_entities(input_data: TextInput):
     """
     Extract medical entities from a single text.
-    
+
     Args:
         input_data: Text input containing the text to process
-        
+
     Returns:
         ExtractionResponse with detected entities and metadata
     """
     if not ner_service:
         raise HTTPException(status_code=503, detail="Service not initialized")
-    
+
     try:
         # Extract entities
         result = await ner_service.extract_entities(input_data.text)
-        
+
         # Convert entities to response format
         entities = [
             EntityResponse(
@@ -206,19 +218,19 @@ async def extract_entities(input_data: TextInput):
                 icd_code=entity.icd_code,
                 icd_description=entity.icd_description,
                 source_model=entity.source_model,
-                category=entity.category
+                category=entity.category,
             )
             for entity in result.entities
         ]
-        
+
         return ExtractionResponse(
             entities=entities,
             processing_time=result.processing_time,
             model_used=result.model_used,
             text_length=result.text_length,
-            timestamp=result.timestamp.isoformat()
+            timestamp=result.timestamp.isoformat(),
         )
-        
+
     except Exception as e:
         logger.error(f"Entity extraction failed: {e}")
         raise HTTPException(status_code=500, detail=f"Extraction failed: {str(e)}")
@@ -228,31 +240,31 @@ async def extract_entities(input_data: TextInput):
 async def extract_entities_batch(input_data: BatchTextInput):
     """
     Extract medical entities from multiple texts in batch.
-    
+
     Args:
         input_data: Batch text input containing list of texts to process
-        
+
     Returns:
         BatchExtractionResponse with results for all texts
     """
     if not ner_service:
         raise HTTPException(status_code=503, detail="Service not initialized")
-    
+
     try:
         # Check batch size limit
         if len(input_data.texts) > config.max_batch_size:
             raise HTTPException(
-                status_code=400, 
-                detail=f"Batch size {len(input_data.texts)} exceeds maximum {config.max_batch_size}"
+                status_code=400,
+                detail=f"Batch size {len(input_data.texts)} exceeds maximum {config.max_batch_size}",
             )
-        
+
         # Extract entities for all texts
         results = await ner_service.extract_batch(input_data.texts)
-        
+
         # Convert results to response format
         response_results = []
         total_processing_time = 0.0
-        
+
         for result in results:
             entities = [
                 EntityResponse(
@@ -265,39 +277,43 @@ async def extract_entities_batch(input_data: BatchTextInput):
                     icd_code=entity.icd_code,
                     icd_description=entity.icd_description,
                     source_model=entity.source_model,
-                    category=entity.category
+                    category=entity.category,
                 )
                 for entity in result.entities
             ]
-            
-            response_results.append(ExtractionResponse(
-                entities=entities,
-                processing_time=result.processing_time,
-                model_used=result.model_used,
-                text_length=result.text_length,
-                timestamp=result.timestamp.isoformat()
-            ))
-            
+
+            response_results.append(
+                ExtractionResponse(
+                    entities=entities,
+                    processing_time=result.processing_time,
+                    model_used=result.model_used,
+                    text_length=result.text_length,
+                    timestamp=result.timestamp.isoformat(),
+                )
+            )
+
             total_processing_time += result.processing_time
-        
+
         return BatchExtractionResponse(
             results=response_results,
             total_processing_time=total_processing_time,
-            batch_size=len(input_data.texts)
+            batch_size=len(input_data.texts),
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Batch extraction failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Batch extraction failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Batch extraction failed: {str(e)}"
+        )
 
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     """
     Check service health and status.
-    
+
     Returns:
         HealthResponse with service status, model availability, and statistics
     """
@@ -307,21 +323,21 @@ async def health_check():
             timestamp=datetime.now().isoformat(),
             models={},
             stats={},
-            memory_usage={}
+            memory_usage={},
         )
-    
+
     try:
         # Get health status
         health_data = await ner_service.health_check()
-        
+
         return HealthResponse(
             status=health_data["status"],
             timestamp=health_data["timestamp"],
             models=health_data["models"],
             stats=health_data["stats"],
-            memory_usage=health_data["memory_usage"]
+            memory_usage=health_data["memory_usage"],
         )
-        
+
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return HealthResponse(
@@ -329,7 +345,7 @@ async def health_check():
             timestamp=datetime.now().isoformat(),
             models={},
             stats={},
-            memory_usage={}
+            memory_usage={},
         )
 
 
@@ -337,13 +353,13 @@ async def health_check():
 async def get_stats():
     """
     Get service statistics and performance metrics.
-    
+
     Returns:
         Dictionary with service statistics
     """
     if not ner_service:
         raise HTTPException(status_code=503, detail="Service not initialized")
-    
+
     try:
         return ner_service.get_stats()
     except Exception as e:
@@ -355,44 +371,46 @@ async def get_stats():
 async def get_model_status():
     """
     Get status of all loaded models.
-    
+
     Returns:
         Dictionary mapping model names to their load status
     """
     if not model_loader:
         raise HTTPException(status_code=503, detail="Service not initialized")
-    
+
     try:
         return model_loader.get_model_status()
     except Exception as e:
         logger.error(f"Failed to get model status: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get model status: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get model status: {str(e)}"
+        )
 
 
 @app.post("/extract_with_stats", response_model=Dict[str, Any])
 async def extract_entities_with_stats(input_data: TextInput):
     """
     Extract medical entities with detailed statistics.
-    
+
     Args:
         input_data: Text input containing the text to process
-        
+
     Returns:
         Dictionary with entities and detailed statistics
     """
     if not ner_service:
         raise HTTPException(status_code=503, detail="Service not initialized")
-    
+
     try:
         # Extract entities
         result = await ner_service.extract_entities(input_data.text)
-        
+
         # Get entity statistics
         stats = ner_service.get_entity_statistics(result.entities)
-        
+
         # Format entities for display
         display_text = ner_service.format_entities_for_display(result.entities)
-        
+
         return {
             "entities": [
                 {
@@ -405,7 +423,7 @@ async def extract_entities_with_stats(input_data: TextInput):
                     "icd_code": entity.icd_code,
                     "icd_description": entity.icd_description,
                     "source_model": entity.source_model,
-                    "category": entity.category
+                    "category": entity.category,
                 }
                 for entity in result.entities
             ],
@@ -414,12 +432,14 @@ async def extract_entities_with_stats(input_data: TextInput):
             "processing_time": result.processing_time,
             "model_used": result.model_used,
             "text_length": result.text_length,
-            "timestamp": result.timestamp.isoformat()
+            "timestamp": result.timestamp.isoformat(),
         }
-        
+
     except Exception as e:
         logger.error(f"Entity extraction with stats failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Extraction with stats failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Extraction with stats failed: {str(e)}"
+        )
 
 
 # Error handlers
@@ -431,8 +451,8 @@ async def http_exception_handler(request, exc):
         content={
             "error": exc.detail,
             "status_code": exc.status_code,
-            "timestamp": datetime.now().isoformat()
-        }
+            "timestamp": datetime.now().isoformat(),
+        },
     )
 
 
@@ -445,17 +465,13 @@ async def general_exception_handler(request, exc):
         content={
             "error": "Internal server error",
             "status_code": 500,
-            "timestamp": datetime.now().isoformat()
-        }
+            "timestamp": datetime.now().isoformat(),
+        },
     )
 
 
 if __name__ == "__main__":
     # Run the application
     uvicorn.run(
-        "api.app:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=False,
-        log_level="info"
+        "api.app:app", host="0.0.0.0", port=8000, reload=False, log_level="info"
     )

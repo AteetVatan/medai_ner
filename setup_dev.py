@@ -16,7 +16,9 @@ def run_command(command: str, description: str) -> bool:
     """Run a command and return success status."""
     print(f"🔄 {description}...")
     try:
-        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        result = subprocess.run(
+            command, shell=True, check=True, capture_output=True, text=True
+        )
         print(f"✅ {description} completed successfully")
         return True
     except subprocess.CalledProcessError as e:
@@ -44,12 +46,12 @@ def install_dependencies():
 def download_spacy_model() -> bool:
     """Download spaCy German model (de_core_news_md) via safest method."""
     print("📥 Downloading spaCy German model (de_core_news_md)…")
-    
+
     # Strategy A: Use spaCy CLI (preferred if works)
     cli_cmd = [sys.executable, "-m", "spacy", "download", "de_core_news_md"]
     if run_command(cli_cmd, "spaCy CLI download"):
         return True
-    
+
     # Strategy B: Direct pip install of model wheel (bypass CLI)
     wheel_url = (
         "https://github.com/explosion/spacy-models/releases/download/"
@@ -58,7 +60,7 @@ def download_spacy_model() -> bool:
     pip_cmd = [sys.executable, "-m", "pip", "install", wheel_url]
     if run_command(pip_cmd, "pip install spaCy German model wheel"):
         return True
-    
+
     print("[ERROR] All methods to download spaCy German model failed.")
     return False
 
@@ -115,33 +117,35 @@ def main():
     """Main setup function."""
     print("🚀 MedNER-DE Service Development Setup")
     print("=" * 50)
-    
+
     # Check Python version
     if not check_python_version():
         sys.exit(1)
-    
+
     # Create directories
     create_directories()
-    
+
     # Install dependencies
     if not install_dependencies():
         print("❌ Failed to install dependencies")
         sys.exit(1)
-    
+
     # Download spaCy model
     if not download_spacy_model():
-        print("⚠️  Failed to download spaCy model - you may need to download it manually")
-    
+        print(
+            "⚠️  Failed to download spaCy model - you may need to download it manually"
+        )
+
     # Setup environment
     setup_environment()
-    
+
     # Run tests
     print("\n🧪 Running tests to verify setup...")
     if run_tests():
         print(" All tests passed!")
     else:
         print("  Some tests failed - check the output above")
-    
+
     print("\n Development setup completed!")
     print("\nNext steps:")
     print("1. Start the service: python -m api.app")

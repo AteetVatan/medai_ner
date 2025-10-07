@@ -51,6 +51,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class MedicalEntity:
     """Represents a detected medical entity."""
+
     text: str
     label: str
     start: int
@@ -65,79 +66,195 @@ class MedicalEntity:
 
 class ICDDictionary:
     """ICD-10/ICD-11 dictionary for medical entity mapping."""
-    
+
     def __init__(self):
         self.icd_codes = {}
         self._load_icd_dictionary()
-    
+
     def _load_icd_dictionary(self):
         """Load ICD-10/ICD-11 codes and descriptions."""
         # In production, this would load from a comprehensive database
         # For MVP, we'll use a subset of common German medical terms
         self.icd_codes = {
             # Common symptoms
-            "kopfschmerzen": {"code": "R51", "description": "Kopfschmerz", "category": "symptom"},
-            "schwindel": {"code": "R42", "description": "Schwindel und Gangunsicherheit", "category": "symptom"},
-            "müdigkeit": {"code": "R53", "description": "Unwohlsein und Ermüdung", "category": "symptom"},
+            "kopfschmerzen": {
+                "code": "R51",
+                "description": "Kopfschmerz",
+                "category": "symptom",
+            },
+            "schwindel": {
+                "code": "R42",
+                "description": "Schwindel und Gangunsicherheit",
+                "category": "symptom",
+            },
+            "müdigkeit": {
+                "code": "R53",
+                "description": "Unwohlsein und Ermüdung",
+                "category": "symptom",
+            },
             "fieber": {"code": "R50", "description": "Fieber", "category": "symptom"},
-            "schmerzen": {"code": "R52", "description": "Schmerz", "category": "symptom"},
-            "übelkeit": {"code": "R11", "description": "Übelkeit und Erbrechen", "category": "symptom"},
-            
+            "schmerzen": {
+                "code": "R52",
+                "description": "Schmerz",
+                "category": "symptom",
+            },
+            "übelkeit": {
+                "code": "R11",
+                "description": "Übelkeit und Erbrechen",
+                "category": "symptom",
+            },
             # Common diagnoses
-            "hypertension": {"code": "I10", "description": "Essentielle Hypertonie", "category": "diagnosis"},
-            "diabetes": {"code": "E11", "description": "Diabetes mellitus, Typ 2", "category": "diagnosis"},
-            "depression": {"code": "F32", "description": "Depressive Episode", "category": "diagnosis"},
-            "angina": {"code": "I20", "description": "Angina pectoris", "category": "diagnosis"},
-            "asthma": {"code": "J45", "description": "Asthma bronchiale", "category": "diagnosis"},
-            
+            "hypertension": {
+                "code": "I10",
+                "description": "Essentielle Hypertonie",
+                "category": "diagnosis",
+            },
+            "diabetes": {
+                "code": "E11",
+                "description": "Diabetes mellitus, Typ 2",
+                "category": "diagnosis",
+            },
+            "depression": {
+                "code": "F32",
+                "description": "Depressive Episode",
+                "category": "diagnosis",
+            },
+            "angina": {
+                "code": "I20",
+                "description": "Angina pectoris",
+                "category": "diagnosis",
+            },
+            "asthma": {
+                "code": "J45",
+                "description": "Asthma bronchiale",
+                "category": "diagnosis",
+            },
             # Body parts/anatomy
-            "kopf": {"code": "S01", "description": "Verletzung des Kopfes", "category": "anatomy"},
-            "rücken": {"code": "M54", "description": "Rückenschmerzen", "category": "anatomy"},
-            "herz": {"code": "I25", "description": "Chronische ischämische Herzkrankheit", "category": "anatomy"},
-            "lunge": {"code": "J44", "description": "Sonstige chronische obstruktive Lungenkrankheit", "category": "anatomy"},
-            "magen": {"code": "K25", "description": "Ulcus ventriculi", "category": "anatomy"},          
-                        
+            "kopf": {
+                "code": "S01",
+                "description": "Verletzung des Kopfes",
+                "category": "anatomy",
+            },
+            "rücken": {
+                "code": "M54",
+                "description": "Rückenschmerzen",
+                "category": "anatomy",
+            },
+            "herz": {
+                "code": "I25",
+                "description": "Chronische ischämische Herzkrankheit",
+                "category": "anatomy",
+            },
+            "lunge": {
+                "code": "J44",
+                "description": "Sonstige chronische obstruktive Lungenkrankheit",
+                "category": "anatomy",
+            },
+            "magen": {
+                "code": "K25",
+                "description": "Ulcus ventriculi",
+                "category": "anatomy",
+            },
             # Medications
-            "aspirin": {"code": "N02BA01", "description": "Acetylsalicylsäure", "category": "medication"},
-            "paracetamol": {"code": "N02BE01", "description": "Paracetamol", "category": "medication"},
-            "metformin": {"code": "A10BA02", "description": "Metformin", "category": "medication"},
-            "lisinopril": {"code": "C09AA03", "description": "Lisinopril", "category": "medication"},
-            "ibuprofen": {"code": "M01AE01", "description": "Ibuprofen", "category": "medication"},
-            "diclofenac": {"code": "M01AB05", "description": "Diclofenac", "category": "medication"},
-            
+            "aspirin": {
+                "code": "N02BA01",
+                "description": "Acetylsalicylsäure",
+                "category": "medication",
+            },
+            "paracetamol": {
+                "code": "N02BE01",
+                "description": "Paracetamol",
+                "category": "medication",
+            },
+            "metformin": {
+                "code": "A10BA02",
+                "description": "Metformin",
+                "category": "medication",
+            },
+            "lisinopril": {
+                "code": "C09AA03",
+                "description": "Lisinopril",
+                "category": "medication",
+            },
+            "ibuprofen": {
+                "code": "M01AE01",
+                "description": "Ibuprofen",
+                "category": "medication",
+            },
+            "diclofenac": {
+                "code": "M01AB05",
+                "description": "Diclofenac",
+                "category": "medication",
+            },
             # Common rehab diagnoses (M-Kapitel = Muskel-Skelett)
-            "rückenschmerzen": {"code": "M54", "description": "Rückenschmerzen/Dorsalgie", "category": "diagnosis"},
-            "ischias": {"code": "M54", "description": "Rückenschmerzen/Ischialgie", "category": "diagnosis"},
-            "hws-syndrom": {"code": "M53", "description": "Zervikalsyndrom", "category": "diagnosis"},
-            "bws-syndrom": {"code": "M53", "description": "Thorakalsyndrom", "category": "diagnosis"},
-            "lws-syndrom": {"code": "M53", "description": "Lumbalsyndrom", "category": "diagnosis"},
-            "gonarthrose": {"code": "M17", "description": "Gonarthrose (Kniearthrose)", "category": "diagnosis"},
-            "coxarthrose": {"code": "M16", "description": "Coxarthrose (Hüftarthrose)", "category": "diagnosis"},
-            "tendinitis": {"code": "M77", "description": "Sonstige Enthesiopathien/Tendinitis", "category": "diagnosis"},
-            "bandscheibenvorfall": {"code": "M51", "description": "Bandscheibenschäden", "category": "diagnosis"},
+            "rückenschmerzen": {
+                "code": "M54",
+                "description": "Rückenschmerzen/Dorsalgie",
+                "category": "diagnosis",
+            },
+            "ischias": {
+                "code": "M54",
+                "description": "Rückenschmerzen/Ischialgie",
+                "category": "diagnosis",
+            },
+            "hws-syndrom": {
+                "code": "M53",
+                "description": "Zervikalsyndrom",
+                "category": "diagnosis",
+            },
+            "bws-syndrom": {
+                "code": "M53",
+                "description": "Thorakalsyndrom",
+                "category": "diagnosis",
+            },
+            "lws-syndrom": {
+                "code": "M53",
+                "description": "Lumbalsyndrom",
+                "category": "diagnosis",
+            },
+            "gonarthrose": {
+                "code": "M17",
+                "description": "Gonarthrose (Kniearthrose)",
+                "category": "diagnosis",
+            },
+            "coxarthrose": {
+                "code": "M16",
+                "description": "Coxarthrose (Hüftarthrose)",
+                "category": "diagnosis",
+            },
+            "tendinitis": {
+                "code": "M77",
+                "description": "Sonstige Enthesiopathien/Tendinitis",
+                "category": "diagnosis",
+            },
+            "bandscheibenvorfall": {
+                "code": "M51",
+                "description": "Bandscheibenschäden",
+                "category": "diagnosis",
+            },
         }
-    
+
     def lookup_entity(self, text: str) -> Optional[Dict[str, str]]:
         """Look up entity in ICD dictionary."""
         text_lower = text.lower().strip()
-        
+
         # Direct lookup
         if text_lower in self.icd_codes:
             return self.icd_codes[text_lower]
-        
+
         # Fuzzy matching for common variations
         for key, value in self.icd_codes.items():
             if self._fuzzy_match(text_lower, key):
                 return value
-        
+
         return None
-    
+
     def _fuzzy_match(self, text: str, key: str) -> bool:
         """Simple fuzzy matching for medical terms."""
         # Check if key is contained in text or vice versa
         if key in text or text in key:
             return True
-        
+
         # Check for common medical term variations
         variations = {
             "kopfschmerzen": ["kopfschmerz", "kopfweh", "kopfschmerz"],
@@ -147,18 +264,19 @@ class ICDDictionary:
             "schmerzen": ["schmerz", "weh", "wehweh"],
             "übelkeit": ["übel", "brechreiz"],
         }
-        
+
         if key in variations:
             for variation in variations[key]:
                 if variation in text:
                     return True
-        
+
         return False
 
 
 @dataclass
 class ExtractionResult:
     """Result of entity extraction."""
+
     entities: List[MedicalEntity]
     processing_time: float
     model_used: List[str]
@@ -168,7 +286,7 @@ class ExtractionResult:
 
 class MedicalNERService:
     """Main service class for medical NER processing."""
-    
+
     def __init__(self, config: ServiceConfig, model_loader: ModelLoader):
         self.config = config
         self.model_loader = model_loader
@@ -177,12 +295,12 @@ class MedicalNERService:
         self.extraction_stats = {
             "total_extractions": 0,
             "total_entities": 0,
-            "avg_processing_time": 0.0
+            "avg_processing_time": 0.0,
         }
-        
+
         # Medical entity patterns for custom rules
         self._setup_medical_patterns()
-    
+
     def _setup_medical_patterns(self):
         """Setup custom medical entity patterns."""
         self.medical_patterns = {
@@ -205,13 +323,13 @@ class MedicalNERService:
             "SYMPTOM": [
                 r"\b(?:Schmerz|Fieber|Husten|Kopfschmerz)\b",
                 r"\b[A-Z][a-z]+schmerz\b",
-            ]
+            ],
         }
-    
+
     def _add_medical_patterns(self, nlp):
         """Add custom patterns for medical entities to spaCy pipeline."""
         matcher = Matcher(nlp.vocab)
-        
+
         # Patterns for common medical terms
         patterns = [
             # Symptoms
@@ -221,32 +339,29 @@ class MedicalNERService:
             [{"LOWER": {"IN": ["fieber", "temperatur", "fiebrig"]}}],
             [{"LOWER": {"IN": ["schmerzen", "schmerz", "weh"]}}],
             [{"LOWER": {"IN": ["übelkeit", "übel", "brechreiz"]}}],
-            
             # Diagnoses
             [{"LOWER": {"IN": ["hypertension", "hochdruck", "bluthochdruck"]}}],
             [{"LOWER": {"IN": ["diabetes", "zuckerkrankheit", "diabetes mellitus"]}}],
             [{"LOWER": {"IN": ["depression", "depressiv", "deprimiert"]}}],
             [{"LOWER": {"IN": ["angina", "angina pectoris", "herzschmerz"]}}],
             [{"LOWER": {"IN": ["asthma", "asthma bronchiale", "atemnot"]}}],
-            
             # Body parts
             [{"LOWER": {"IN": ["kopf", "haupt", "schädel"]}}],
             [{"LOWER": {"IN": ["rücken", "wirbelsäule", "spine"]}}],
             [{"LOWER": {"IN": ["herz", "kardial", "kardio"]}}],
             [{"LOWER": {"IN": ["lunge", "pulmonal", "respiratorisch"]}}],
             [{"LOWER": {"IN": ["magen", "gastro", "gastrointestinal"]}}],
-            
             # Medications
             [{"LOWER": {"IN": ["aspirin", "acetylsalicylsäure", "asa"]}}],
             [{"LOWER": {"IN": ["paracetamol", "acetaminophen"]}}],
             [{"LOWER": {"IN": ["metformin", "glucophage"]}}],
             [{"LOWER": {"IN": ["lisinopril", "ace-hemmer"]}}],
         ]
-        
+
         # Add patterns to matcher
         for i, pattern in enumerate(patterns):
             matcher.add(f"MEDICAL_TERM_{i}", [pattern])
-        
+
         # Define a pipeline component that uses this matcher
         @Language.component("medical_matcher")
         def medical_matcher_component(doc):
@@ -257,10 +372,12 @@ class MedicalNERService:
 
         # Register it safely (no config injection)
         nlp.add_pipe("medical_matcher", last=True)
-    
+
     def _add_physio_ruler(self, nlp):
         """Add an EntityRuler with common physiotherapy/rehab terms & abbreviations."""
-        ruler: EntityRuler = nlp.add_pipe("entity_ruler", name="physio_ruler", config={"overwrite_ents": False})
+        ruler: EntityRuler = nlp.add_pipe(
+            "entity_ruler", name="physio_ruler", config={"overwrite_ents": False}
+        )
 
         # Terms aligned with typical outpatient/inpatient rehab documentation
         physio_terms = [
@@ -306,19 +423,19 @@ class MedicalNERService:
 
         patterns = [{"label": label, "pattern": term} for (term, label) in physio_terms]
         ruler.add_patterns(patterns)
-    
+
     async def extract_entities(self, text: str) -> ExtractionResult:
         """
         Extract medical entities from a single text.
-        
+
         Args:
             text: Input text to process
-            
+
         Returns:
             ExtractionResult with detected entities
         """
         start_time = datetime.now()
-        
+
         # Validate input
         if not text or not text.strip():
             return ExtractionResult(
@@ -326,120 +443,126 @@ class MedicalNERService:
                 processing_time=0.0,
                 model_used=[],
                 text_length=0,
-                timestamp=start_time
+                timestamp=start_time,
             )
-        
+
         # Check text length limit
         if len(text) > self.config.max_text_length:
-            text = text[:self.config.max_text_length]
-            logger.warning(f"Text truncated to {self.config.max_text_length} characters")
-        
+            text = text[: self.config.max_text_length]
+            logger.warning(
+                f"Text truncated to {self.config.max_text_length} characters"
+            )
+
         try:
             # Extract entities using available models
             entities = []
             models_used = []
-            
+
             # spaCy extraction (always available)
             if self.model_loader.is_model_loaded("spacy"):
                 spacy_entities = await self._extract_with_spacy(text)
                 entities.extend(spacy_entities)
                 models_used.append("spacy")
-            
+
             # GERNERMEDpp extraction
             if self.model_loader.is_model_loaded("gernermed"):
                 gernermed_entities = await self._extract_with_gernermed(text)
                 entities.extend(gernermed_entities)
                 models_used.append("gernermed")
-            
+
             # GermanBERT extraction
             if self.model_loader.is_model_loaded("germanbert"):
                 germanbert_entities = await self._extract_with_germanbert(text)
                 entities.extend(germanbert_entities)
                 models_used.append("germanbert")
-            
+
             # Apply custom medical patterns
             custom_entities = self._extract_with_patterns(text)
             entities.extend(custom_entities)
-            
+
             # Merge and deduplicate entities
             merged_entities = self._merge_entities(entities)
-            
+
             # Normalize entities
             normalized_entities = await self._normalize_entities(merged_entities)
-            
+
             # Update statistics
             processing_time = (datetime.now() - start_time).total_seconds()
             self._update_stats(processing_time, len(normalized_entities))
-            
+
             return ExtractionResult(
                 entities=normalized_entities,
                 processing_time=processing_time,
                 model_used=models_used,
                 text_length=len(text),
-                timestamp=start_time
+                timestamp=start_time,
             )
-            
+
         except Exception as e:
             logger.error(f"Entity extraction failed: {e}")
             raise
-    
+
     async def extract_batch(self, texts: List[str]) -> List[ExtractionResult]:
         """
         Extract entities from multiple texts in batch.
-        
+
         Args:
             texts: List of texts to process
-            
+
         Returns:
             List of ExtractionResult objects
         """
         if len(texts) > self.config.max_batch_size:
-            raise ValueError(f"Batch size {len(texts)} exceeds maximum {self.config.max_batch_size}")
-        
+            raise ValueError(
+                f"Batch size {len(texts)} exceeds maximum {self.config.max_batch_size}"
+            )
+
         # Process texts in parallel
         tasks = [self.extract_entities(text) for text in texts]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         # Handle any exceptions
         processed_results = []
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 logger.error(f"Batch processing failed for text {i}: {result}")
-                processed_results.append(ExtractionResult(
-                    entities=[],
-                    processing_time=0.0,
-                    model_used=[],
-                    text_length=len(texts[i]),
-                    timestamp=datetime.now()
-                ))
+                processed_results.append(
+                    ExtractionResult(
+                        entities=[],
+                        processing_time=0.0,
+                        model_used=[],
+                        text_length=len(texts[i]),
+                        timestamp=datetime.now(),
+                    )
+                )
             else:
                 processed_results.append(result)
-        
+
         return processed_results
-    
+
     async def _extract_with_spacy(self, text: str) -> List[MedicalEntity]:
         """Extract entities using spaCy model."""
         try:
             nlp = self.model_loader.get_model("spacy")
             if not nlp:
                 return []
-            
+
             # Add custom patterns and physio ruler if not already added
             if "matcher" not in nlp.pipe_names:
                 self._add_medical_patterns(nlp)
             if "physio_ruler" not in nlp.pipe_names:
                 self._add_physio_ruler(nlp)
-            
+
             doc = nlp(text)
             entities = []
-            
+
             for ent in doc.ents:
                 # Map spaCy labels to medical categories
                 medical_label = self._map_spacy_label(ent.label_)
-                
+
                 # Look up ICD code
                 icd_info = self.icd_dict.lookup_entity(ent.text)
-                
+
                 entity = MedicalEntity(
                     text=ent.text,
                     label=medical_label,
@@ -450,16 +573,16 @@ class MedicalNERService:
                     icd_code=icd_info.get("code") if icd_info else None,
                     icd_description=icd_info.get("description") if icd_info else None,
                     category=icd_info.get("category") if icd_info else None,
-                    normalized_text=ent.text.lower()
+                    normalized_text=ent.text.lower(),
                 )
                 entities.append(entity)
-            
+
             return entities
-            
+
         except Exception as e:
             logger.error(f"spaCy extraction failed: {e}")
             return []
-    
+
     async def _extract_with_gernermed(self, text: str) -> List[MedicalEntity]:
         """Extract entities using GERNERMEDpp model."""
         try:
@@ -486,7 +609,7 @@ class MedicalNERService:
                     normalized_text=ent.text.lower(),
                     icd_code=icd_info.get("code") if icd_info else None,
                     icd_description=icd_info.get("description") if icd_info else None,
-                    category=icd_info.get("category") if icd_info else None
+                    category=icd_info.get("category") if icd_info else None,
                 )
                 entities.append(entity)
 
@@ -497,7 +620,6 @@ class MedicalNERService:
             logger.error(f"GERNERMEDpp extraction failed: {e}", exc_info=True)
             return []
 
-    
     async def _extract_with_germanbert(self, text: str) -> List[MedicalEntity]:
         """Extract entities using GermanBERT model."""
         try:
@@ -505,15 +627,15 @@ class MedicalNERService:
             # This would be implemented based on the specific model's API
             logger.info("GermanBERT extraction not yet implemented")
             return []
-            
+
         except Exception as e:
             logger.error(f"GermanBERT extraction failed: {e}")
             return []
-    
+
     def _extract_with_patterns(self, text: str) -> List[MedicalEntity]:
         """Extract entities using custom medical patterns."""
         entities = []
-        
+
         for label, patterns in self.medical_patterns.items():
             for pattern in patterns:
                 for match in re.finditer(pattern, text, re.IGNORECASE):
@@ -523,12 +645,12 @@ class MedicalNERService:
                         start=match.start(),
                         end=match.end(),
                         confidence=0.7,  # Pattern-based confidence
-                        source_model="patterns"
+                        source_model="patterns",
                     )
                     entities.append(entity)
-        
+
         return entities
-    
+
     def _map_spacy_label(self, spacy_label: str) -> str:
         """
         Map spaCy labels to medAI-normalized categories.
@@ -564,18 +686,18 @@ class MedicalNERService:
             "Duration": "MED_DURATION",
         }
         return base_map.get(spacy_label, "MISC")
-    
+
     def _merge_entities(self, entities: List[MedicalEntity]) -> List[MedicalEntity]:
         """Merge overlapping entities and remove duplicates."""
         if not entities:
             return []
-        
+
         # Sort by start position
         entities.sort(key=lambda x: x.start)
-        
+
         merged = []
         current = entities[0]
-        
+
         for entity in entities[1:]:
             # Check for overlap
             if entity.start < current.end and entity.end <= current.end:
@@ -589,74 +711,78 @@ class MedicalNERService:
                 # No overlap, add current and move to next
                 merged.append(current)
                 current = entity
-        
+
         merged.append(current)
         return merged
-    
-    async def _normalize_entities(self, entities: List[MedicalEntity]) -> List[MedicalEntity]:
+
+    async def _normalize_entities(
+        self, entities: List[MedicalEntity]
+    ) -> List[MedicalEntity]:
         """Normalize entity text and add ICD codes."""
         normalized = []
-        
+
         for entity in entities:
             # Normalize text
             normalized_text = self._normalize_text(entity.text)
             entity.normalized_text = normalized_text
-            
+
             # Look up ICD code if enabled
             if ICD_CONFIG["lookup_enabled"]:
                 icd_info = await self._lookup_icd_code(normalized_text, entity.label)
                 if icd_info:
                     entity.icd_code = icd_info.get("code")
                     entity.icd_description = icd_info.get("description")
-            
+
             normalized.append(entity)
-        
+
         return normalized
-    
+
     def _normalize_text(self, text: str) -> str:
         """Normalize entity text."""
         # Basic normalization
         normalized = text.strip()
-        normalized = re.sub(r'\s+', ' ', normalized)  # Normalize whitespace
+        normalized = re.sub(r"\s+", " ", normalized)  # Normalize whitespace
         normalized = normalized.title()  # Title case
-        
+
         return normalized
-    
+
     async def _lookup_icd_code(self, text: str, label: str) -> Optional[Dict[str, str]]:
         """Look up ICD code for entity text."""
         # Check cache first
         cache_key = f"{text}_{label}"
         if cache_key in self.icd_cache:
             return self.icd_cache[cache_key]
-        
+
         # Placeholder for ICD lookup
         # This would integrate with an actual ICD database
         icd_info = None
-        
+
         # Cache the result
         if icd_info:
             self.icd_cache[cache_key] = icd_info
             # Limit cache size
             if len(self.icd_cache) > ICD_CONFIG["cache_size"]:
                 # Remove oldest entries
-                keys_to_remove = list(self.icd_cache.keys())[:len(self.icd_cache) - ICD_CONFIG["cache_size"]]
+                keys_to_remove = list(self.icd_cache.keys())[
+                    : len(self.icd_cache) - ICD_CONFIG["cache_size"]
+                ]
                 for key in keys_to_remove:
                     del self.icd_cache[key]
-        
+
         return icd_info
-    
+
     def _update_stats(self, processing_time: float, entity_count: int):
         """Update extraction statistics."""
         self.extraction_stats["total_extractions"] += 1
         self.extraction_stats["total_entities"] += entity_count
-        
+
         # Update average processing time
         total_extractions = self.extraction_stats["total_extractions"]
         current_avg = self.extraction_stats["avg_processing_time"]
         self.extraction_stats["avg_processing_time"] = (
-            (current_avg * (total_extractions - 1) + processing_time) / total_extractions
-        )
-    
+            current_avg * (total_extractions - 1) + processing_time
+        ) / total_extractions
+
     def get_stats(self) -> Dict[str, Any]:
         """Get extraction statistics."""
         return {
@@ -668,11 +794,11 @@ class MedicalNERService:
                 "models_enabled": {
                     "spacy": self.config.spacy_enabled,
                     "gernermed": self.config.gernermed_enabled,
-                    "germanbert": self.config.germanbert_enabled
-                }
-            }
+                    "germanbert": self.config.germanbert_enabled,
+                },
+            },
         }
-    
+
     async def health_check(self) -> Dict[str, Any]:
         """Perform health check on the service."""
         health_status = {
@@ -680,32 +806,33 @@ class MedicalNERService:
             "timestamp": datetime.now().isoformat(),
             "models": self.model_loader.get_model_status(),
             "stats": self.extraction_stats,
-            "memory_usage": self._get_memory_usage()
+            "memory_usage": self._get_memory_usage(),
         }
-        
+
         # Check if at least one model is loaded
         if not any(self.model_loader.get_model_status().values()):
             health_status["status"] = "unhealthy"
             health_status["error"] = "No models loaded"
-        
+
         return health_status
-    
+
     def _get_memory_usage(self) -> Dict[str, float]:
         """Get current memory usage."""
         try:
             import psutil
+
             process = psutil.Process()
             memory_info = process.memory_info()
             return {
                 "rss_mb": memory_info.rss / 1024 / 1024,
                 "vms_mb": memory_info.vms / 1024 / 1024,
-                "percent": process.memory_percent()
+                "percent": process.memory_percent(),
             }
         except ImportError:
             return {"error": "psutil not available"}
         except Exception as e:
             return {"error": str(e)}
-    
+
     def get_entity_statistics(self, entities: List[MedicalEntity]) -> Dict[str, Any]:
         """Get statistics for extracted entities."""
         stats = {
@@ -728,7 +855,7 @@ class MedicalNERService:
             else:
                 stats["confidence_distribution"]["low"] += 1
         return stats
-    
+
     def format_entities_for_display(self, entities: List[MedicalEntity]) -> str:
         """Format entities for display."""
         if not entities:
