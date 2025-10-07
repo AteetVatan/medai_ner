@@ -101,7 +101,7 @@ class ModelLoader:
             # Check if model is already installed
             try:
                 import spacy
-
+                import spacy_transformers 
                 nlp = spacy.load("de_core_news_md")
                 self.loaded_models["spacy"] = nlp
                 logger.info("spaCy model loaded successfully")
@@ -114,7 +114,7 @@ class ModelLoader:
 
             # Load the model
             import spacy
-
+            import spacy_transformers 
             nlp = spacy.load("de_core_news_md")
             self.loaded_models["spacy"] = nlp
             logger.info("spaCy model loaded successfully")
@@ -175,7 +175,7 @@ class ModelLoader:
             }
 
             import spacy
-
+            import spacy_transformers
             nlp = spacy.load(model_path)
             self.loaded_models["gernermed"] = nlp
 

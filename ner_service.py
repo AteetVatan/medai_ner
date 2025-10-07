@@ -36,6 +36,7 @@ if not hasattr(ForwardRef, "_orig_evaluate"):
 
 # Now import spaCy
 import spacy
+import spacy_transformers
 from spacy.tokens import Doc, Span
 from spacy.pipeline import EntityRuler
 from spacy.matcher import Matcher
