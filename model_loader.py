@@ -18,6 +18,8 @@ from typing import Dict, List, Optional, Tuple, Any
 from urllib.parse import urlparse
 import aiohttp
 import aiofiles
+import ssl
+import certifi
 
 from config import ServiceConfig, ModelConfig
 
@@ -146,6 +148,7 @@ class ModelLoader:
             # Check if model directory exists
             gernermed_config = self.config.get_gernermed_model_config()
             model_path = Path(gernermed_config.local_modal_path)
+            
             if not model_path.exists():
                 logger.info("GERNERMEDpp model not found, downloading...")
                 await self._download_and_extract_gernermed()
@@ -175,24 +178,32 @@ class ModelLoader:
             # Download the zip file
             gernermed_config = self.config.get_gernermed_model_config()
             
-            zip_path = gernermed_config.zip_path
+            #zip_path = gernermed_config.zip_path
             
             model_path = Path(gernermed_config.local_modal_path)
             if not model_path.exists():
                 # Create models directory
                 os.makedirs(model_path, exist_ok=True)
+                
+            local_zip_path = Path(gernermed_config.local_file_path)
+            if not model_path.exists():
+                # Create model download directory
+                os.makedirs(model_path, exist_ok=True)
                         
             # zip_path = Path(gernermed_config.local_file_path)
             # if not model_path.exists():
                 
-            # # zip_path = await self._download_file(
-            # #     gernermed_config.url,
-            # #     os.path.join(self.config.cache_dir, "GERNERMEDpp.zip")
-            # # )
+            zip_path = await self._download_file_with_ssl(
+                 gernermed_config.url,
+                 os.path.join(local_zip_path, gernermed_config.local_file_name)
+            )
             
             # Extract to models directory
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                 zip_ref.extractall(model_path)
+                
+            # remove the zip file
+            os.remove(zip_path)
             
             logger.info("GERNERMEDpp model extracted successfully")
             
@@ -282,6 +293,50 @@ class ModelLoader:
         logger.info(f"Downloaded {url} to {destination}")
         return destination
     
+    async def _download_file_with_ssl(self, url: str, dest_path: str) -> str:
+        """Download file with verified SSL context, fallback, and progress indicator."""
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+        async def _stream_download(session, url, dest_path):
+            async with session.get(url) as resp:
+                resp.raise_for_status()
+                total = int(resp.headers.get("Content-Length", 0))
+                downloaded = 0
+                chunk_size = 8192
+
+                with open(dest_path, "wb") as f:
+                    async for chunk in resp.content.iter_chunked(chunk_size):
+                        f.write(chunk)
+                        downloaded += len(chunk)
+
+                        if total > 0:
+                            percent = downloaded / total * 100
+                            # overwrite same line
+                            sys.stdout.write(f"\rDownloading: {percent:6.2f}% ({downloaded/1e6:.2f} MB / {total/1e6:.2f} MB)")
+                            sys.stdout.flush()
+                        else:
+                            sys.stdout.write(f"\rDownloaded: {downloaded/1e6:.2f} MB")
+                            sys.stdout.flush()
+
+                print("\nDownload complete.")
+
+        try:
+            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
+                await _stream_download(session, url, dest_path)
+            return dest_path
+
+        except aiohttp.ClientConnectorCertificateError:
+            print(f"\n[WARN] SSL verification failed for {url}, retrying with ssl=False (trusted host only).")
+            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
+                await _stream_download(session, url, dest_path)
+            return dest_path
+
+        except Exception as e:
+            print(f"[ERROR] Download failed for {url}: {e}")
+            raise
+        
     def get_model(self, model_name: str) -> Optional[Any]:
         """Get a loaded model by name."""
         return self.loaded_models.get(model_name)

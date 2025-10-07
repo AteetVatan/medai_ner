@@ -674,9 +674,5 @@ auto-save-list
 tramp
 .\#*
 
-#keep this specific one
-!ner_archived/GERNERMEDpp/GERNERMEDpp_GottBERT.zip
-!ner_archived/GERNERMEDpp/medner-de.log
-
 # Project specific exclusions
 # Add any project-specific files or directories here

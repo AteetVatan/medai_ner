@@ -3,7 +3,7 @@ requires = ["setuptools>=68.2.2", "wheel>=0.38"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "medai_nlp"
+name = "medai_ner"
 version = "1.0.0"
 description = "German Medical Named Entity Recognition Service"
 readme = "README.md"
@@ -78,15 +78,15 @@ test = [
   "httpx==0.25.2",
 ]
 all = [
-  "medai_nlp[dev,docs,test]"
+  "medai_ner[dev,docs,test]"
 ]
 
 [project.urls]
-Homepage = "https://github.com/AteetVatan/medai_nlp"
-Documentation = "https://ateetvatan.github.io/medai_nlp"
-Repository = "https://github.com/AteetVatan/medai_nlp.git"
-Issues = "https://github.com/AteetVatan/medai_nlp/issues"
-Changelog = "https://github.com/AteetVatan/medai_nlp/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/AteetVatan/medai_ner"
+Documentation = "https://ateetvatan.github.io/medai_ner"
+Repository = "https://github.com/AteetVatan/medai_ner.git"
+Issues = "https://github.com/AteetVatan/medai_ner/issues"
+Changelog = "https://github.com/AteetVatan/medai_ner/blob/main/CHANGELOG.md"
 
 [project.scripts]
 medai-nlp = "main:main"
