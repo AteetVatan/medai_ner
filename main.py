@@ -65,7 +65,6 @@ async def initialize_service():
     except ModelLoadError as e:
         logger.error(f"Model loading failed: {e}")
         logger.error("Please ensure spaCy German model is installed:")
-        logger.error("python -m spacy download de_core_news_md")
         sys.exit(1)
     except Exception as e:
         logger.error(f"Service initialization failed: {e}")

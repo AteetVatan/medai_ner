@@ -84,8 +84,19 @@ class ModelLoader:
             else:
                 self.model_status[model_name] = result
 
+        # Log model status
+        successful_models = [name for name, status in self.model_status.items() if status]
+        failed_models = [name for name, status in self.model_status.items() if not status]
+        
+        if successful_models:
+            logger.info(f"Successfully loaded models: {successful_models}")
+        if failed_models:
+            logger.warning(f"Failed to load models: {failed_models}")
+
         # Ensure at least spaCy is loaded
         if not self.model_status.get("spacy", False):
+            logger.error("spaCy model is required but failed to load")
+            logger.error("Available models: " + str([name for name, status in self.model_status.items() if status]))
             raise ModelLoadError(
                 "Failed to load spaCy model - this is required for the service to function"
             )
@@ -106,19 +117,39 @@ class ModelLoader:
                 self.loaded_models["spacy"] = nlp
                 logger.info("spaCy model loaded successfully")
                 return True
-            except OSError:
-                logger.info("spaCy model not found, downloading...")
+            except (OSError, IOError) as e:
+                logger.warning(f"spaCy model not found: {e}")
+                logger.info("Attempting to download and install spaCy model...")
 
-            # Download and install spaCy model
-            await self._download_and_install_spacy()
-
-            # Load the model
-            import spacy
-            import spacy_transformers 
-            nlp = spacy.load("de_core_news_md")
-            self.loaded_models["spacy"] = nlp
-            logger.info("spaCy model loaded successfully")
-            return True
+                # Download and install spaCy model
+                try:
+                    await self._download_and_install_spacy()
+                    
+                    # Try loading again after installation
+                    nlp = spacy.load("de_core_news_md")
+                    self.loaded_models["spacy"] = nlp
+                    logger.info("spaCy model loaded successfully after installation")
+                    return True
+                except Exception as install_error:
+                    logger.error(f"Failed to install spaCy model: {install_error}")
+                    # Try alternative: use spacy download command
+                    try:
+                        import subprocess
+                        result = subprocess.run([
+                            sys.executable, "-m", "spacy", "download", "de_core_news_md"
+                        ], capture_output=True, text=True, timeout=300)
+                        
+                        if result.returncode == 0:
+                            nlp = spacy.load("de_core_news_md")
+                            self.loaded_models["spacy"] = nlp
+                            logger.info("spaCy model loaded successfully via spacy download")
+                            return True
+                        else:
+                            logger.error(f"spacy download failed: {result.stderr}")
+                    except Exception as download_error:
+                        logger.error(f"Alternative spaCy download failed: {download_error}")
+                    
+                    return False
 
         except Exception as e:
             logger.error(f"Failed to load spaCy model: {e}")

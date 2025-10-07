@@ -30,6 +30,9 @@ COPY requirements-prod.txt ./
 RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements-prod.txt
 
+# Pre-install spaCy German model
+RUN python -m spacy download de_core_news_md
+
 # =============================================================================
 # Stage 2: Production Runtime
 # =============================================================================
