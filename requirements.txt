@@ -122,7 +122,7 @@ thinc==8.2.5
 threadpoolctl==3.6.0
 tokenizers==0.15.2
 tomlkit==0.13.3
-torch==2.8.0
+torch==2.2.0
 tqdm==4.67.1
 transformers==4.36.0
 typer==0.19.2

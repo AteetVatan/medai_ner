@@ -129,9 +129,10 @@ class ModelLoader:
         try:
             # Download the wheel file
             spacy_config = self.config.get_spacy_model_config()
+            file_name = os.path.basename(spacy_config.url)
             wheel_path = await self._download_file(
                 spacy_config.url,
-                os.path.join(self.config.cache_dir, "de_core_news_md.whl"),
+                os.path.join(self.config.cache_dir, file_name),
             )
 
             # Install the wheel
