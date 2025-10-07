@@ -1,0 +1,111 @@
+# .dockerignore for MedAI NLP Service
+# Purpose: Exclude unnecessary files from Docker build context
+# Design: Optimize build speed and reduce image size
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.env/
+.conda/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs and temporary files
+*.log
+logs/
+*.tmp
+*.temp
+.cache/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Documentation
+docs/
+*.md
+README.md
+CHANGELOG.md
+LICENSE
+
+# Development files
+.env.example
+requirements-dev.txt
+requirements-frozen.txt
+requirements-minimal.txt
+setup_dev.py
+tests/
+.pytest_cache/
+
+# Model files (if large, consider using volumes)
+# models/
+# ner_archived/
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Backup files
+*.bak
+*.backup
