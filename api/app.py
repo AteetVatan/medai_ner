@@ -19,11 +19,60 @@ from config import load_config
 from model_loader import ModelLoader, ModelLoadError
 from ner_service import MedicalNERService, ExtractionResult, MedicalEntity
 
+# Configure logging with rate limiting
+import logging
+import time
+from collections import defaultdict
+
+class RateLimitedLogger:
+    """Logger that limits message frequency to prevent rate limiting."""
+    
+    def __init__(self, logger, max_messages_per_second=10):
+        self.logger = logger
+        self.max_messages_per_second = max_messages_per_second
+        self.message_times = defaultdict(list)
+    
+    def _should_log(self, level, message):
+        """Check if message should be logged based on rate limiting."""
+        now = time.time()
+        key = f"{level}_{hash(message)}"
+        
+        # Clean old timestamps
+        self.message_times[key] = [
+            t for t in self.message_times[key] 
+            if now - t < 1.0
+        ]
+        
+        # Check rate limit
+        if len(self.message_times[key]) >= self.max_messages_per_second:
+            return False
+        
+        self.message_times[key].append(now)
+        return True
+    
+    def info(self, message):
+        if self._should_log("INFO", message):
+            self.logger.info(message)
+    
+    def warning(self, message):
+        if self._should_log("WARNING", message):
+            self.logger.warning(message)
+    
+    def error(self, message):
+        if self._should_log("ERROR", message):
+            self.logger.error(message)
+    
+    def debug(self, message):
+        if self._should_log("DEBUG", message):
+            self.logger.debug(message)
+
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, 
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
-logger = logging.getLogger(__name__)
+base_logger = logging.getLogger(__name__)
+logger = RateLimitedLogger(base_logger, max_messages_per_second=5)
 
 # Global service instances
 config = None
